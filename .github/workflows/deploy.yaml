@@ -70,7 +70,7 @@ jobs:
           REQUESTS=$(curl -s "http://localhost:9090/api/v1/query?query=sum(http_requests_total)" \
           | jq -r '.data.result[0].value[1] // "0"')
           RATE=$(curl -s "http://localhost:9090/api/v1/query" \
-          --data-urlencode "query=round(rate(http_requests_total[5m]),0.01)" \
+          --data-urlencode "query=round(sum(rate(http_requests_total[5m])),0.01)" \
           | jq -r '.data.result[0].value[1] // "0"')
           RESTARTS=$(curl -s "http://localhost:9090/api/v1/query?query=kube_pod_container_status_restarts_total{pod=~'go-api.*'}" \
           | jq -r '.data.result[0].value[1] // "0"')
