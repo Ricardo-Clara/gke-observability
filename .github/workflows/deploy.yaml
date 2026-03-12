@@ -45,23 +45,34 @@ jobs:
       - name: Query Prometheus metrics
         run: |
           kubectl port-forward svc/monitoring-kube-prometheus-stack-prometheus 9090:9090 -n monitoring &
-          sleep 5
-
+          PF_PID=$!
+          
+          echo "waiting for port-forward..."
+          for i in {1..10}; do
+          curl -s http://localhost:9090/-/healthy && break
+          sleep 3
+          done
+  
+          echo "--- raw prometheus response ---"
+          curl -s "http://localhost:9090/api/v1/query?query=sum(http_requests_total)" | jq .
+          
           REQUESTS=$(curl -s "http://localhost:9090/api/v1/query?query=sum(http_requests_total)" \
-            | jq -r '.data.result[0].value[1] // "0"')
-
+          | jq -r '.data.result[0].value[1] // "0"')
+  
           RATE=$(curl -s "http://localhost:9090/api/v1/query?query=round(rate(http_requests_total[5m]),0.01)" \
-            | jq -r '.data.result[0].value[1] // "0"')
-
+          | jq -r '.data.result[0].value[1] // "0"')
+  
           RESTARTS=$(curl -s "http://localhost:9090/api/v1/query?query=kube_pod_container_status_restarts_total{pod=~'go-api.*'}" \
-            | jq -r '.data.result[0].value[1] // "0"')
-
+          | jq -r '.data.result[0].value[1] // "0"')
+  
           echo "### App Metrics" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Total HTTP Requests | $REQUESTS |" >> $GITHUB_STEP_SUMMARY
           echo "| Request Rate (5m) | $RATE req/s |" >> $GITHUB_STEP_SUMMARY
           echo "| Pod Restarts | $RESTARTS |" >> $GITHUB_STEP_SUMMARY
+  
+          kill $PF_PID
 
       - name: Check deployment health
         run: |
