@@ -74,4 +74,4 @@ jobs:
           if [ "$READY" != "$DESIRED" ]; then
             echo "Not all replicas are ready"
             exit 1
-          fi
+          fi          
