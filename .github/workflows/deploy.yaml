@@ -42,8 +42,20 @@ jobs:
           kubectl get pods -l app=go-api -o wide >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
+      - name: Smoke test app
+        run: |
+          EXTERNAL_IP=$(kubectl get svc go-api-svc -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "App IP: $EXTERNAL_IP"
+  
+          for i in {1..20}; do
+            curl -s http://$EXTERNAL_IP/health
+            sleep 0.5
+          done
+
       - name: Query Prometheus metrics
         run: |
+          sleep 35
+          
           kubectl port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090 -n monitoring &
           PF_PID=$!
   
