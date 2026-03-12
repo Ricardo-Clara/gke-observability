@@ -23,7 +23,8 @@ jobs:
 
       - name: Deploy to GKE
         run: |
-          gcloud container clusters get-credentials observability-cluster --region europe-west1
+          apt-get install google-cloud-sdk-gke-gcloud-auth-plugin
+          gcloud container clusters get-credentials observability-cluster --location=europe-west1
           kubectl set image deployment/go-api go-api=europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/api/go-api:${{ github.sha }}
 
       - name: Wait for rollout
@@ -74,4 +75,3 @@ jobs:
             echo "Not all replicas are ready"
             exit 1
           fi
-          
